@@ -25,7 +25,7 @@ CREATE TABLE IF NOT EXISTS images (
 CREATE TABLE IF NOT EXISTS users (
     id INT AUTO_INCREMENT PRIMARY KEY,
     username VARCHAR(120) NOT NULL UNIQUE,
-    password_hash VARCHAR(255) NOT NULL,
+    password VARCHAR(255) NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -45,6 +45,6 @@ INSERT INTO images (id, article_id, image_url, alt_text, sort_order) VALUES
     (3, 2, '/template/images/rewrite-basics.jpg', 'URL rewriting basics', 1)
 ON DUPLICATE KEY UPDATE image_url = VALUES(image_url), alt_text = VALUES(alt_text), sort_order = VALUES(sort_order);
 
-INSERT INTO users (id, username, password_hash) VALUES
-    (1, 'admin', '$2y$10$2wU8tQ4YzRok6pUJ7N0P5.YV77wQ5P3Yv1vP8uQ6n2O9m50Me3x3y')
-ON DUPLICATE KEY UPDATE username = VALUES(username), password_hash = VALUES(password_hash);
+INSERT INTO users (id, username, password) VALUES
+    (1, 'admin', 'admin123')
+ON DUPLICATE KEY UPDATE username = VALUES(username), password = VALUES(password);

@@ -103,7 +103,7 @@ Schema simplifie actuel:
 - categories: id, name
 - articles: id, category_id, body (HTML)
 - images: id, article_id, image_url, alt_text, sort_order
-- users: id, username, password_hash
+- users: id, username, password (texte brut, mode prototype)
 
 ## 8) Convention de factorisation appliquee
 Factorisation minimale mise en place:
@@ -117,6 +117,10 @@ Principe:
 - Garder la connexion DB dans config/database.php
 - Centraliser les fonctions metier SQL dans includes/function.php
 - Garder modules.php comme orchestration + rendu
+
+Note prototype:
+- Les mots de passe utilisateurs sont en texte brut pour aller plus vite.
+- Cette approche ne doit pas etre conservee en production.
 
 ## 9) Reinitialiser la base proprement
 Si vous modifiez le schema SQL et voulez recharger depuis zero:

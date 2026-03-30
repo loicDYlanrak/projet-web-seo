@@ -44,7 +44,7 @@ function findImagesByArticleId(PDO $pdo, int $articleId): array
 
 function findUserByUsername(PDO $pdo, string $username): ?array
 {
-    $stmt = $pdo->prepare('SELECT id, username, password_hash FROM users WHERE username = :username LIMIT 1');
+    $stmt = $pdo->prepare('SELECT id, username, password FROM users WHERE username = :username LIMIT 1');
     $stmt->execute(['username' => $username]);
     $user = $stmt->fetch();
 
@@ -58,5 +58,5 @@ function verifyUserCredentials(PDO $pdo, string $username, string $plainPassword
         return false;
     }
 
-    return password_verify($plainPassword, (string) $user['password_hash']);
+    return hash_equals((string) $user['password'], $plainPassword);
 }
