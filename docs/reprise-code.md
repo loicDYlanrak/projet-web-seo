@@ -27,8 +27,8 @@ Composants:
   - .env: variables de connexion MySQL
 
 - Backend PHP
-  - config/database.php: connexion PDO singleton et lecture env
-  - includes/article_repository.php: fonctions SQL factorisees
+  - config/database.php: fonctions de connexion PDO (envValue, dbConnection)
+  - includes/function.php: fonctions mutualisees metier (articles, images, users)
   - pages/modules.php: endpoint principal alimente par rewriting
   - pages/db-test.php: page de diagnostic de connexion DB
 
@@ -47,8 +47,8 @@ Chemin d'execution:
 1. Apache recoit l'URL
 2. .htaccess applique RewriteRule vers pages/modules.php
 3. modules.php lit id/idcat depuis GET
-4. modules.php appelle includes/article_repository.php
-5. article_repository.php utilise la connexion PDO de config/database.php
+4. modules.php appelle les fonctions de includes/function.php
+5. includes/function.php utilise dbConnection() de config/database.php puis execute les requetes
 6. Requete SQL sur MySQL puis rendu HTML
 
 ## 5) Demarrage local (sans telechargement d'images)
@@ -79,13 +79,15 @@ Resultat attendu pour db-test:
 - Database status: ok
 - MySQL version visible
 - compteur d'articles > 0
+- compteur d'images > 0
+- compteur d'utilisateurs > 0
 
 ## 7) Ou coder selon le besoin
 - Changer la connexion DB ou options PDO:
   - config/database.php
 
 - Ajouter des requetes SQL metier:
-  - includes/article_repository.php
+  - includes/function.php
 
 - Modifier le rendu de la page article dynamique:
   - pages/modules.php
@@ -97,6 +99,12 @@ Resultat attendu pour db-test:
   - docker/mysql/init/01_schema.sql
   - Attention: ces scripts sont joues a l'initialisation du volume MySQL.
 
+Schema simplifie actuel:
+- categories: id, name
+- articles: id, category_id, body (HTML)
+- images: id, article_id, image_url, alt_text, sort_order
+- users: id, username, password_hash
+
 ## 8) Convention de factorisation appliquee
 Factorisation minimale mise en place:
 - config/: configuration technique
@@ -106,7 +114,8 @@ Factorisation minimale mise en place:
 
 Principe:
 - Eviter les requetes SQL directement dans les pages
-- Centraliser l'acces DB dans includes/article_repository.php
+- Garder la connexion DB dans config/database.php
+- Centraliser les fonctions metier SQL dans includes/function.php
 - Garder modules.php comme orchestration + rendu
 
 ## 9) Reinitialiser la base proprement

@@ -45,4 +45,5 @@ Any change in PHP/HTML/CSS/JS is visible immediately without restarting Docker o
 ## Documentation reprise
 
 - Reprise technique et architecture: docs/reprise-code.md
+- Fonctions mutualisees: includes/function.php
 
