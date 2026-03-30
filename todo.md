@@ -41,7 +41,7 @@
 ## 3. Frontoffice (FO)
 
 ### Personne B
-- [ ] Créer la structure HTML/CSS du site d’information (thème : guerre en Iran)
+- [X] Créer la structure HTML/CSS du site d’information (thème : guerre en Iran)
 - [ ] Respecter la hiérarchie des titres (`h1`, `h2`, ...)
 - [ ] Afficher les contenus depuis la base de données
 - [ ] Intégrer les images avec attribut `alt`
