@@ -293,6 +293,9 @@ function resetForm() {
   document.getElementById('edit-id').value  = '';
   document.getElementById('f-title').value  = '';
   document.getElementById('f-body').value   = '';
+  if (typeof tinymce !== 'undefined' && tinymce.get('f-body')) {
+    tinymce.get('f-body').setContent('');
+  }
   document.getElementById('f-author').value = '';
   document.getElementById('f-category').value = '';
   document.getElementById('f-image').value  = '';
@@ -309,6 +312,9 @@ function editArticle(id) {
   document.getElementById('edit-id').value  = a.id;
   document.getElementById('f-title').value  = a.title;
   document.getElementById('f-body').value   = a.body;
+  if (typeof tinymce !== 'undefined' && tinymce.get('f-body')) {
+    tinymce.get('f-body').setContent(a.body);
+  }
   document.getElementById('f-author').value = a.author;
   document.getElementById('f-category').value = a.category;
   document.getElementById('f-image').value  = a.image || '';
@@ -318,6 +324,9 @@ function editArticle(id) {
 }
 
 function saveArticle() {
+  if (typeof tinymce !== 'undefined' && tinymce.get('f-body')) {
+    tinymce.triggerSave();
+  }
   const title    = document.getElementById('f-title').value.trim();
   const body     = document.getElementById('f-body').value.trim();
   const author   = document.getElementById('f-author').value.trim();
@@ -461,3 +470,27 @@ function formatDate(dateStr) {
   const d = new Date(dateStr);
   return d.toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' });
 }
+
+// ══════════════════════════════════════════════
+// INIT TINYMCE
+// ══════════════════════════════════════════════
+document.addEventListener('DOMContentLoaded', () => {
+  if (typeof tinymce !== 'undefined') {
+    tinymce.init({
+      selector: '#f-body',
+      license_key: 'gpl',
+      plugins: 'advlist autolink lists link image charmap preview anchor searchreplace visualblocks code fullscreen insertdatetime media table code help wordcount',
+      toolbar: 'undo redo | blocks | ' +
+      'bold italic backcolor | alignleft aligncenter ' +
+      'alignright alignjustify | bullist numlist outdent indent | ' +
+      'removeformat | help',
+      content_style: 'body { font-family:Helvetica,Arial,sans-serif; font-size:14px }',
+      height: 400,
+      setup: function (editor) {
+        editor.on('change', function () {
+          editor.save();
+        });
+      }
+    });
+  }
+});
