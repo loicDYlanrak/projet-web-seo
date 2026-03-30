@@ -23,11 +23,27 @@
   --green:     #4ecc8a;
   --orange:    #f0924e;
   --purple:    #a87ee8;
-  --sidebar-w: 230px;
-  --radius:    10px;
+  --sidebar-w: 260px;
+  --radius:    14px;
   --font-head: 'Playfair Display', serif;
   --font-body: 'DM Sans', sans-serif;
-  --shadow:    0 8px 32px rgba(0,0,0,0.5);
+  --shadow:    0 12px 40px rgba(0,0,0,0.6);
+  --glass:     rgba(19, 19, 26, 0.7);
+}
+
+:root[data-theme='light'] {
+  --bg:        #f4f5f7;
+  --bg2:       #ffffff;
+  --bg3:       #fcfcfd;
+  --border:    rgba(0,0,0,0.08);
+  --border2:   rgba(0,0,0,0.15);
+  --text:      #1a1a1f;
+  --text-muted:#6b6b7b;
+  --text-dim:  #9fa0b2;
+  --accent:    #c59c27;
+  --accent2:   #a37c15;
+  --shadow:    0 12px 40px rgba(0,0,0,0.08);
+  --glass:     rgba(255, 255, 255, 0.85);
 }
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -39,6 +55,11 @@ html, body {
   color: var(--text);
   font-size: 14px;
   -webkit-font-smoothing: antialiased;
+  transition: background-color 0.4s ease, color 0.4s ease;
+}
+
+body *, body *::before, body *::after {
+  transition: background-color 0.4s ease, border-color 0.4s ease, color 0.4s ease, box-shadow 0.4s ease;
 }
 
 a { color: inherit; text-decoration: none; }
@@ -77,10 +98,10 @@ input, textarea, select {
   position: relative;
   background: var(--bg2);
   border: 1px solid var(--border2);
-  border-radius: 16px;
-  padding: 44px 48px;
-  width: 420px;
-  box-shadow: var(--shadow), 0 0 80px rgba(232,200,109,0.06);
+  border-radius: 20px;
+  padding: 52px 56px;
+  width: 440px;
+  box-shadow: var(--shadow), 0 0 100px var(--accent-light);
   animation: loginFadeIn 0.5s ease;
 }
 @keyframes loginFadeIn {
@@ -289,9 +310,11 @@ input, textarea, select {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 16px 28px;
+  padding: 20px 32px;
   border-bottom: 1px solid var(--border);
-  background: var(--bg2);
+  background: var(--glass);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   position: sticky; top: 0; z-index: 10;
   gap: 16px;
 }
@@ -330,16 +353,20 @@ input, textarea, select {
 /* ─── BUTTONS ─── */
 .btn-primary {
   background: var(--accent);
-  color: #0d0d0f;
+  color: #ffffff;
   border: none;
   border-radius: 8px;
-  padding: 9px 18px;
+  padding: 10px 20px;
   font-weight: 600;
   font-size: 13px;
-  transition: background 0.2s, transform 0.1s;
+  transition: background 0.2s, transform 0.1s, box-shadow 0.2s;
   white-space: nowrap;
+  box-shadow: 0 4px 14px var(--accent-light);
 }
-.btn-primary:hover { background: var(--accent2); }
+.btn-primary:hover { 
+  background: var(--accent2); 
+  box-shadow: 0 6px 20px var(--accent-light);
+}
 .btn-primary:active { transform: scale(0.98); }
 
 .btn-secondary {
@@ -400,19 +427,20 @@ input, textarea, select {
   background: var(--bg2);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  padding: 20px 22px;
+  padding: 24px 26px;
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 18px;
   position: relative;
   overflow: hidden;
-  transition: transform 0.2s, border-color 0.2s;
+  box-shadow: var(--shadow-sm);
+  transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s;
 }
 .stat-card::after {
   content: '';
   position: absolute;
   top: 0; right: 0;
-  width: 3px; height: 100%;
+  width: 4px; height: 100%;
 }
 .stat-card.accent-blue::after  { background: var(--blue); }
 .stat-card.accent-green::after { background: var(--green); }
@@ -446,7 +474,8 @@ input, textarea, select {
   background: var(--bg2);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  padding: 20px;
+  padding: 24px;
+  box-shadow: var(--shadow-sm);
 }
 .recent-articles h3,
 .categories-panel h3 {
@@ -521,6 +550,7 @@ input, textarea, select {
   border: 1px solid var(--border);
   border-radius: var(--radius);
   overflow: hidden;
+  box-shadow: var(--shadow-sm);
 }
 .articles-table {
   width: 100%;
@@ -570,7 +600,8 @@ input, textarea, select {
   background: var(--bg2);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  padding: 28px 32px;
+  padding: 32px 36px;
+  box-shadow: var(--shadow-sm);
 }
 .form-card h2 {
   font-family: var(--font-head);
