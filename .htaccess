@@ -1,8 +1,8 @@
 Options +FollowSymLinks
 RewriteEngine On
 
-RewriteRule ^pages/frontoffice/?.*$ pages/frontoffice/index.php [L,NC]
-RewriteRule ^pages/backoffice/?.*$ pages/backoffice/index.php [L,NC]
+RewriteRule ^pages/frontoffice/?.*$ pages/frontoffice/index.php [QSA,L,NC]
+RewriteRule ^pages/backoffice/?.*$ pages/backoffice/index.php [QSA,L,NC]
 RewriteRule ^pages/article-([_a-z0-9-]+)\.html$ pages/modules.php?id=$1 [L,QSA,NC]
 RewriteRule ^(.*/)?[^/]*-([_a-z0-9-]+)-([_a-z0-9-]+)\.html$ pages/modules.php?id=$2&idcat=$3 [L,QSA,NC]
 RewriteRule ^(.*/)?[^/]*-([_a-z0-9-]+)-([_a-z0-9-]+)\.php$ pages/modules.php?id=$2&idcat=$3 [L,QSA,NC]
