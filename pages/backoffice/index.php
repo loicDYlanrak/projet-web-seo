@@ -92,27 +92,59 @@ $theme = getTheme();
     </div>
 
     <script>
-        // Si on est en mode édition, charger les données
         if (window.editMode && window.editData) {
-            setTimeout(() => {
-                document.getElementById('edit-id').value = window.editId;
-                document.getElementById('f-title').value = window.editData.title;
-                document.getElementById('f-author').value = window.editData.author;
-                document.getElementById('f-category').value = window.editData.category;
-                document.getElementById('f-image').value = window.editData.image_url;
+            function loadEditData() {
+                if (typeof tinymce !== 'undefined' && tinymce.get('f-body')) {
+                    const editor = tinymce.get('f-body');
 
-                if (window.editData.image_url) {
-                    document.getElementById('preview-img').src = window.editData.image_url;
-                    document.getElementById('preview-img').classList.remove('hidden');
-                    document.getElementById('upload-placeholder').classList.add('hidden');
+                    const editIdField = document.getElementById('edit-id');
+                    if (editIdField) editIdField.value = window.editId;
+
+                    if (window.editData.title) {
+                        let currentContent = editor.getContent();
+                        if (!currentContent.includes('<h1>')) {
+                            const titleHtml = `<h1>${escapeHtml(window.editData.title)}</h1>`;
+                            editor.setContent(titleHtml + currentContent);
+                        }
+                    }
+
+                    const authorField = document.getElementById('f-author');
+                    if (authorField) authorField.value = window.editData.author;
+
+                    const categoryField = document.getElementById('f-category');
+                    if (categoryField) categoryField.value = window.editData.category;
+
+                    const imageField = document.getElementById('f-image');
+                    if (imageField && window.editData.image_url) {
+                        imageField.value = window.editData.image_url;
+                        const previewImg = document.getElementById('preview-img');
+                        const uploadPlaceholder = document.getElementById('upload-placeholder');
+                        if (previewImg && uploadPlaceholder) {
+                            previewImg.src = window.editData.image_url;
+                            previewImg.classList.remove('hidden');
+                            uploadPlaceholder.classList.add('hidden');
+                        }
+                    }
+
+                    if (window.editData.body) {
+                        editor.setContent(window.editData.body);
+                    }
+
+                    const formTitle = document.getElementById('form-title');
+                    if (formTitle) formTitle.textContent = 'Modifier l\'article';
+                } else {
+                    setTimeout(loadEditData, 100);
                 }
+            }
 
-                if (window.editData.body) {
-                    tinymce.get('f-body').setContent(window.editData.body);
-                }
+            setTimeout(loadEditData, 500);
+        }
 
-                document.getElementById('form-title').textContent = 'Modifier l\'article';
-            }, 500);
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
         }
     </script>
 
