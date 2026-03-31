@@ -73,7 +73,8 @@ document.addEventListener('DOMContentLoaded', () => {
   loadTheme();
   loadArticles();
   setupFilterTabs();
-  // Press Enter on login
+  const loginpass = document.getElementById('login-pass');
+  if (!loginpass) return;
   document.getElementById('login-pass').addEventListener('keydown', e => {
     if (e.key === 'Enter') doLogin();
   });
@@ -201,14 +202,17 @@ function renderDashboard() {
 // ARTICLES TABLE
 // ══════════════════════════════════════════════
 function setupFilterTabs() {
-  document.getElementById('filter-tabs').addEventListener('click', e => {
-    const tab = e.target.closest('.filter-tab');
-    if (!tab) return;
-    document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
-    tab.classList.add('active');
-    currentFilter = tab.dataset.cat;
-    renderArticlesTable();
-  });
+    const filterTabs = document.getElementById('filter-tabs');
+    if (!filterTabs) return; // Sortir silencieusement si l'élément n'existe pas
+    
+    filterTabs.addEventListener('click', e => {
+        const tab = e.target.closest('.filter-tab');
+        if (!tab) return;
+        document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+        currentFilter = tab.dataset.cat;
+        renderArticlesTable();
+    });
 }
 
 function filterArticles(q) {
@@ -281,65 +285,6 @@ function resetForm() {
   document.getElementById('f-image').value  = '';
   clearPreview();
   hideFormError();
-}
-
-function editArticle(id) {
-  const a = articles.find(x => x.id === id);
-  if (!a) return;
-
-  showView('new-article');
-  document.getElementById('form-title').textContent = 'Modifier l\'article';
-  document.getElementById('edit-id').value  = a.id;
-  document.getElementById('f-title').value  = a.title;
-  document.getElementById('f-body').value   = a.body;
-  if (typeof tinymce !== 'undefined' && tinymce.get('f-body')) {
-    tinymce.get('f-body').setContent(a.body);
-  }
-  document.getElementById('f-author').value = a.author;
-  document.getElementById('f-category').value = a.category;
-  document.getElementById('f-image').value  = a.image || '';
-  if (a.image) setPreview(a.image);
-  else clearPreview();
-  hideFormError();
-}
-
-function saveArticle() {
-  if (typeof tinymce !== 'undefined' && tinymce.get('f-body')) {
-    tinymce.triggerSave();
-  }
-  const title    = document.getElementById('f-title').value.trim();
-  const body     = document.getElementById('f-body').value.trim();
-  const author   = document.getElementById('f-author').value.trim();
-  const category = document.getElementById('f-category').value;
-  const image    = document.getElementById('f-image').value.trim() ||
-                   (document.getElementById('preview-img').src || '');
-  const editId   = document.getElementById('edit-id').value;
-
-  if (!title || !body || !author || !category) {
-    showFormError('Veuillez remplir tous les champs obligatoires (*).');
-    return;
-  }
-
-  if (editId) {
-    // UPDATE
-    const idx = articles.findIndex(a => a.id === parseInt(editId));
-    if (idx !== -1) {
-      articles[idx] = { ...articles[idx], title, body, author, category, image };
-      saveToStorage();
-      showToast('Article mis à jour avec succès !');
-    }
-  } else {
-    // CREATE
-    const newId = articles.length ? Math.max(...articles.map(a => a.id)) + 1 : 1;
-    articles.unshift({
-      id: newId, title, body, author, category, image,
-      date: new Date().toISOString()
-    });
-    saveToStorage();
-    showToast('Article créé avec succès !');
-  }
-
-  showView('articles');
 }
 
 function cancelForm() {
@@ -458,3 +403,26 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 });
+
+
+function showSuccess(message) {
+    // Créer un élément toast pour le succès si nécessaire
+    const errorDiv = document.getElementById('form-error');
+    if (errorDiv) {
+        errorDiv.textContent = message;
+        errorDiv.style.background = 'rgba(78,204,138,0.1)';
+        errorDiv.style.borderColor = 'rgba(78,204,138,0.25)';
+        errorDiv.style.color = 'var(--success)';
+        errorDiv.classList.remove('hidden');
+        
+        setTimeout(() => {
+            errorDiv.classList.add('hidden');
+            errorDiv.style.background = '';
+            errorDiv.style.borderColor = '';
+            errorDiv.style.color = '';
+        }, 3000);
+    } else {
+        // Fallback avec alert si l'élément n'existe pas
+        alert(message);
+    }
+}

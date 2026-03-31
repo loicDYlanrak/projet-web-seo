@@ -10,27 +10,34 @@ $theme = getTheme();
 
 <!DOCTYPE html>
 <html lang="fr" data-theme="<?php echo $theme; ?>">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>VertoNews - Administration</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500;600&display=swap"
+        rel="stylesheet">
     <link rel="stylesheet" href="css/style.css">
-    <script src="https://cdn.tiny.cloud/1/x7dn4o6gh9jr91ldui8z4p55ugpr26owqko9rbafmtvo3116/tinymce/6/tinymce.min.js" referrerpolicy="origin"></script>
+    <script src="https://cdn.tiny.cloud/1/x7dn4o6gh9jr91ldui8z4p55ugpr26owqko9rbafmtvo3116/tinymce/6/tinymce.min.js"
+        referrerpolicy="origin"></script>
     <script>
-        // Initialiser TinyMCE pour l'éditeur
         tinymce.init({
             selector: '#f-body',
             height: 400,
             menubar: true,
-            plugins: 'advlist autolink lists link image charmap print preview anchor searchreplace visualblocks code fullscreen insertdatetime media table paste code help wordcount',
-            toolbar: 'undo redo | formatselect | bold italic backcolor | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | removeformat | help',
+            plugins: 'advlist autolink lists link image charmap preview anchor searchreplace visualblocks code fullscreen insertdatetime media table help wordcount',
+            toolbar: 'undo redo | blocks | ' +
+                'bold italic backcolor | alignleft aligncenter ' +
+                'alignright alignjustify | bullist numlist outdent indent | ' +
+                'removeformat | help',
             content_style: 'body { font-family:Helvetica,Arial,sans-serif; font-size:16px }',
             readonly: false
         });
     </script>
 </head>
+
 <body>
     <div class="app">
         <?php include 'sidebar.php'; ?>
@@ -61,9 +68,9 @@ $theme = getTheme();
                         // Ignorer l'erreur
                     }
                 }
-                
+
                 // Inclure la vue appropriée
-                switch($view) {
+                switch ($view) {
                     case 'dashboard':
                         include 'dashboard.php';
                         break;
@@ -83,32 +90,65 @@ $theme = getTheme();
             </div>
         </div>
     </div>
-    
+
     <script>
-        // Si on est en mode édition, charger les données
         if (window.editMode && window.editData) {
-            setTimeout(() => {
-                document.getElementById('edit-id').value = window.editId;
-                document.getElementById('f-title').value = window.editData.title;
-                document.getElementById('f-author').value = window.editData.author;
-                document.getElementById('f-category').value = window.editData.category;
-                document.getElementById('f-image').value = window.editData.image_url;
-                
-                if (window.editData.image_url) {
-                    document.getElementById('preview-img').src = window.editData.image_url;
-                    document.getElementById('preview-img').classList.remove('hidden');
-                    document.getElementById('upload-placeholder').classList.add('hidden');
+            function loadEditData() {
+                if (typeof tinymce !== 'undefined' && tinymce.get('f-body')) {
+                    const editor = tinymce.get('f-body');
+
+                    const editIdField = document.getElementById('edit-id');
+                    if (editIdField) editIdField.value = window.editId;
+
+                    if (window.editData.title) {
+                        let currentContent = editor.getContent();
+                        if (!currentContent.includes('<h1>')) {
+                            const titleHtml = `<h1>${escapeHtml(window.editData.title)}</h1>`;
+                            editor.setContent(titleHtml + currentContent);
+                        }
+                    }
+
+                    const authorField = document.getElementById('f-author');
+                    if (authorField) authorField.value = window.editData.author;
+
+                    const categoryField = document.getElementById('f-category');
+                    if (categoryField) categoryField.value = window.editData.category;
+
+                    const imageField = document.getElementById('f-image');
+                    if (imageField && window.editData.image_url) {
+                        imageField.value = window.editData.image_url;
+                        const previewImg = document.getElementById('preview-img');
+                        const uploadPlaceholder = document.getElementById('upload-placeholder');
+                        if (previewImg && uploadPlaceholder) {
+                            previewImg.src = window.editData.image_url;
+                            previewImg.classList.remove('hidden');
+                            uploadPlaceholder.classList.add('hidden');
+                        }
+                    }
+
+                    if (window.editData.body) {
+                        editor.setContent(window.editData.body);
+                    }
+
+                    const formTitle = document.getElementById('form-title');
+                    if (formTitle) formTitle.textContent = 'Modifier l\'article';
+                } else {
+                    setTimeout(loadEditData, 100);
                 }
-                
-                if (window.editData.body) {
-                    tinymce.get('f-body').setContent(window.editData.body);
-                }
-                
-                document.getElementById('form-title').textContent = 'Modifier l\'article';
-            }, 500);
+            }
+
+            setTimeout(loadEditData, 500);
+        }
+
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
         }
     </script>
-    
+
     <script src="js/app.js"></script>
 </body>
+
 </html>

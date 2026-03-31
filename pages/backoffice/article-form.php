@@ -26,10 +26,9 @@
         </div>
         <div class="form-col-right">
             <div class="form-group">
-                <label>ImageS</label>
+                <label>Images</label>
                 <div class="image-upload-area" id="upload-area"
                     onclick="document.getElementById('f-image-file').click()">
-                    <img id="preview-img" src="" alt="" class="hidden" />
                     <div class="upload-placeholder" id="upload-placeholder">
                         <svg viewBox="0 0 24 24">
                             <rect x="3" y="3" width="18" height="18" rx="2" />
@@ -43,7 +42,6 @@
                 <input type="file" id="f-image-file" accept="image/*" multiple style="display:none"
                     onchange="handleImageUpload(event)" />
                 <div id="images-container" class="images-container"></div>
-
             </div>
         </div>
     </div>
@@ -72,20 +70,6 @@
             .catch(error => console.error('Erreur:', error));
     }
 
-    // Gérer l'upload d'image
-    function handleImageUpload(event) {
-        const file = event.target.files[0];
-        if (file) {
-            const reader = new FileReader();
-            reader.onload = function (e) {
-                const imgUrl = e.target.result;
-                document.getElementById('f-image').value = imgUrl;
-                previewFromUrl(imgUrl);
-            };
-            reader.readAsDataURL(file);
-        }
-    }
-
     function previewFromUrl(url) {
         const previewImg = document.getElementById('preview-img');
         const uploadPlaceholder = document.getElementById('upload-placeholder');
@@ -103,10 +87,16 @@
     function cancelForm() {
         document.getElementById('edit-id').value = '';
         document.getElementById('f-title').value = '';
-        document.getElementById('f-body').value = '';
+        if (tinymce.get('f-body')) {
+            tinymce.get('f-body').setContent('');
+        }
         document.getElementById('f-author').value = '';
         document.getElementById('f-category').value = '';
         document.getElementById('f-image').value = '';
+
+        const imageContainer = document.getElementById('images-container');
+        imageContainer.innerHTML = '';
+
         document.getElementById('preview-img').classList.add('hidden');
         document.getElementById('upload-placeholder').classList.remove('hidden');
         document.getElementById('form-title').textContent = 'Nouvel article';
@@ -115,56 +105,63 @@
 
     function saveArticle() {
         const id = document.getElementById('edit-id').value;
-        const title = document.getElementById('f-title').value;
-        const body = tinymce.get('f-body').getContent(); // Récupérer le contenu TinyMCE
-        const author = document.getElementById('f-author').value;
+
+        let title = '';
+        const bodyContent = tinymce.get('f-body').getContent();
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = bodyContent;
+        const firstH1 = tempDiv.querySelector('h1');
+
+        if (firstH1) {
+            title = firstH1.textContent.trim();
+        }
+
+        const body = tempDiv.innerHTML.trim();
+
+        const author = 'Administrateur'; 
+
         const category = document.getElementById('f-category').value;
 
-        // Récupérer les images uploadées
         const images = [];
-        const imageFiles = document.querySelectorAll('.image-item input[type="file"]');
-        imageFiles.forEach(fileInput => {
-            if (fileInput.files.length > 0) {
-                images.push(fileInput.files[0]);
+        document.querySelectorAll('#images-container .image-item input[name="images[]"]').forEach(input => {
+            if (input.value) {
+                images.push(input.value);
             }
         });
 
-        // Récupérer les images existantes (URLs)
-        const existingImages = [];
-        document.querySelectorAll('.existing-image').forEach(imgElement => {
-            existingImages.push(imgElement.dataset.url);
-        });
-
-        if (!body || !author || !category) {
-            showError('Veuillez remplir tous les champs obligatoires');
+        if (!title || !body || !author || !category) {
+            showError('Veuillez remplir tous les champs obligatoires (titre H1, contenu, catégorie)');
             return;
         }
 
-        // Créer FormData pour envoyer les fichiers
-        const formData = new FormData();
-        formData.append('author', author);
-        formData.append('category', category);
-        formData.append('body', body);
+        const articleData = {
+            title: title,
+            body: body,
+            author: author,
+            category: category,
+            images: images
+        };
 
-        images.forEach((image, index) => {
-            formData.append(`images[${index}]`, image);
-        });
-
-        if (existingImages.length > 0) {
-            formData.append('existing_images', JSON.stringify(existingImages));
+        if (id) {
+            articleData.id = id;
         }
 
         const url = id ? `api/articles.php?action=updateArticle&id=${id}` : 'api/articles.php?action=createArticle';
 
         fetch(url, {
             method: 'POST',
-            body: formData
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(articleData)
         })
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    alert(id ? 'Article modifié avec succès!' : 'Article créé avec succès!');
-                    window.location.href = 'index.php?view=articles';
+                    showSuccess(id ? 'Article modifié avec succès!' : 'Article créé avec succès!');
+                    setTimeout(() => {
+                        window.location.href = 'index.php?view=articles';
+                    }, 1000);
                 } else {
                     showError(data.error || 'Une erreur est survenue');
                 }
@@ -175,30 +172,69 @@
             });
     }
 
-    // Modifier handleImageUpload pour supporter plusieurs images
     function handleImageUpload(event) {
         const files = event.target.files;
         const imageContainer = document.getElementById('images-container');
 
         for (let i = 0; i < files.length; i++) {
             const file = files[i];
+
+            // Vérifier le type de fichier
+            if (!file.type.startsWith('image/')) {
+                showError(`Le fichier "${file.name}" n'est pas une image`);
+                continue;
+            }
+
+            // Vérifier la taille (max 5MB)
+            if (file.size > 5 * 1024 * 1024) {
+                showError(`L'image "${file.name}" dépasse 5MB`);
+                continue;
+            }
+
             const reader = new FileReader();
 
             reader.onload = function (e) {
                 const imageItem = document.createElement('div');
                 imageItem.className = 'image-item';
+                imageItem.setAttribute('data-filename', file.name.length > 15 ? file.name.substring(0, 12) + '...' : file.name);
+
+                // Stocker les données de l'image
+                const imageData = e.target.result;
+
                 imageItem.innerHTML = `
-                <img src="${e.target.result}" alt="Aperçu">
-                <button type="button" onclick="this.parentElement.remove()">Supprimer</button>
-                <input type="hidden" name="images[]" value="${e.target.result}">
+                <img src="${imageData}" alt="${escapeHtml(file.name)}">
+                <button type="button" onclick="removeImage(this, '${imageData}')" title="Supprimer">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+                <input type="hidden" name="images[]" value="${imageData}">
             `;
+
                 imageContainer.appendChild(imageItem);
             };
 
             reader.readAsDataURL(file);
         }
+
+        // Réinitialiser l'input file pour permettre de re-uploader les mêmes fichiers
+        event.target.value = '';
     }
 
+    function removeImage(button, imageData) {
+        const imageItem = button.closest('.image-item');
+        if (imageItem) {
+            imageItem.remove();
+        }
+    }
+
+    // Fonction utilitaire pour échapper le HTML
+    function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
     function showError(message) {
         const errorDiv = document.getElementById('form-error');
         errorDiv.textContent = message;
