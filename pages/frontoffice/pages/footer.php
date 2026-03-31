@@ -265,7 +265,7 @@
 </nav>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-<script src="/frontoffice/js/main.js"></script>
+<script src="js/main.js"></script>
 <script>
   function navigate(p) { window.location.href = p; }
   function goBack() { if (history.length > 1) history.back(); else window.location.href = '/frontoffice/'; }
