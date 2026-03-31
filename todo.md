@@ -4,14 +4,14 @@
 
 | Personne | Rôle principal |
 |----------|----------------|
-| **Personne A** | Base de données, Backoffice, Docker, Documentation technique |
-| **Personne B** | Frontoffice, Intégration HTML/CSS, SEO, Tests Lighthouse |
+| **Toky** | Base de données, Backoffice, Docker, Documentation technique |
+| **Loic** | Frontoffice, Intégration HTML/CSS, SEO, Tests Lighthouse |
 
 ---
 
 ## 1. Initialisation et environnement Docker
 
-### Personne A
+### Toky
 - [ ] Créer un `Dockerfile` pour l’environnement de développement (PHP, Apache, ou autre selon le langage choisi)
 - [ ] Créer un `docker-compose.yml` avec :
   - Service web (PHP/Apache ou Node.js)
@@ -25,7 +25,7 @@
 
 ## 2. Modélisation et création de la base de données
 
-### Personne A
+### Toky
 - [ ] Analyser les contenus à afficher (articles, catégories, images, dates, etc.)
 - [ ] Créer le MCD/MLD (modèle conceptuel/logique)
 - [ ] Générer le script SQL de création des tables :
@@ -40,7 +40,7 @@
 
 ## 3. Frontoffice (FO)
 
-### Personne B
+### Loic
 - [X] Créer la structure HTML/CSS du site d’information (thème : guerre en Iran)
 - [ ] Respecter la hiérarchie des titres (`h1`, `h2`, ...)
 - [ ] Afficher les contenus depuis la base de données
@@ -54,7 +54,7 @@
 
 ## 4. Backoffice (BO)
 
-### Personne A
+### Toky
 - [ ] Créer une interface de connexion sécurisée
 - [ ] Utiliser le login/mot de passe par défaut défini dans la base
 - [ ] Créer un tableau de bord pour gérer les contenus :
@@ -69,7 +69,7 @@
 
 ## 5. Optimisation SEO et tests Lighthouse
 
-### Personne B
+### Loic
 - [ ] Vérifier et corriger la structure des titres (`h1` unique, hiérarchie)
 - [ ] Ajouter les balises méta dynamiques (titre, description)
 - [ ] Vérifier les attributs `alt` de toutes les images
@@ -82,7 +82,7 @@
 
 ## 6. Documentation technique finale
 
-### Personne A (avec contribution de B)
+### Toky (avec contribution de B)
 - [ ] Rédiger la documentation technique au format demandé :
   - Captures d’écran du Frontoffice
   - Captures d’écran du Backoffice (avec login par défaut)
@@ -96,7 +96,7 @@
 
 ## 7. Livraison
 
-### Personne A
+### Toky
 - [ ] Générer un fichier `.zip` contenant tout le projet fonctionnel avec Docker
 - [ ] Pousser le projet sur un dépôt public (GitHub ou GitLab)
 - [ ] Préparer le lien du dépôt pour le formulaire

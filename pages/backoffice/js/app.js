@@ -83,7 +83,7 @@ document.addEventListener('DOMContentLoaded', () => {
 // THEME & APPEARANCE
 // ══════════════════════════════════════════════
 function loadTheme() {
-  const storedTheme = localStorage.getItem('vertonews_theme') || 'dark';
+  const storedTheme = localStorage.getItem('vertonews_theme') || 'light';
   document.documentElement.setAttribute('data-theme', storedTheme);
   updateThemeIcon(storedTheme);
 }
@@ -141,12 +141,8 @@ function doLogin() {
   }
 }
 
-function doLogout() {
-  document.getElementById('app').classList.add('hidden');
-  document.getElementById('login-screen').classList.remove('hidden');
-  document.getElementById('login-screen').classList.add('active');
-  document.getElementById('login-user').value = '';
-  document.getElementById('login-pass').value = '';
+function doLogin() {
+    console.log('Login géré par PHP');
 }
 
 // ══════════════════════════════════════════════
@@ -159,23 +155,7 @@ const viewTitles = {
 };
 
 function showView(name) {
-  // hide all views
-  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
-  const target = document.getElementById('view-' + name);
-  if (target) target.classList.add('active');
-
-  // update nav
-  document.querySelectorAll('.nav-item').forEach(n => {
-    n.classList.toggle('active', n.dataset.view === name);
-  });
-
-  // update topbar title
-  document.getElementById('topbar-title').textContent = viewTitles[name] || '';
-
-  // render the right view
-  if (name === 'dashboard')   renderDashboard();
-  if (name === 'articles')    renderArticlesTable();
-  if (name === 'new-article') resetForm();
+    window.location.href = 'index.php?view=' + name;
 }
 
 // bind nav items
@@ -366,18 +346,6 @@ function cancelForm() {
   showView('articles');
 }
 
-// ── Image handling ─────────────────────────────
-function handleImageUpload(event) {
-  const file = event.target.files[0];
-  if (!file) return;
-  const reader = new FileReader();
-  reader.onload = e => {
-    setPreview(e.target.result);
-    document.getElementById('f-image').value = e.target.result;
-  };
-  reader.readAsDataURL(file);
-}
-
 function previewFromUrl(url) {
   if (url) setPreview(url);
   else clearPreview();
@@ -432,11 +400,6 @@ function confirmDelete() {
   showToast('Article supprimé.', true);
 }
 
-// close modal on overlay click
-document.getElementById('modal-delete').addEventListener('click', e => {
-  if (e.target === e.currentTarget) closeDeleteModal();
-});
-
 // ══════════════════════════════════════════════
 // TOAST
 // ══════════════════════════════════════════════
@@ -479,6 +442,7 @@ document.addEventListener('DOMContentLoaded', () => {
     tinymce.init({
       selector: '#f-body',
       license_key: 'gpl',
+      readonly: false,
       plugins: 'advlist autolink lists link image charmap preview anchor searchreplace visualblocks code fullscreen insertdatetime media table code help wordcount',
       toolbar: 'undo redo | blocks | ' +
       'bold italic backcolor | alignleft aligncenter ' +

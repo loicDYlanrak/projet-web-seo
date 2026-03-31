@@ -25,10 +25,12 @@
       </div>
       <div class="brand">VERTO<span>NEWS</span></div>
       <div class="nav-right">
-        <a href="#"><svg class="social-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.743l7.73-8.835L1.254 2.25H8.08l4.263 5.633 5.9-5.633zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg></a>
-        <a href="#"><i class="fab fa-facebook-f"></i></a>
+        <a href="../backoffice/login" class="btn btn-sm btn-outline-dark me-2" style="border-radius: 20px; font-weight: 600; font-size: 12px;">
+          <i class="fas fa-lock me-1"></i> ADMIN
+        </a>
+        
         <span style="width:1px;height:22px;background:var(--border);display:inline-block;margin:0 2px;"></span>
-        <a href="#"><i class="far fa-user-circle" style="font-size:21px;"></i></a>
+        <a href="#" class="ms-2"><i class="far fa-user-circle" style="font-size:21px;"></i></a>
       </div>
     </div>
     <div class="nav-categories">

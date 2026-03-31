@@ -1,3 +1,8 @@
+DROP TABLE IF EXISTS images;
+DROP TABLE IF EXISTS articles;
+DROP TABLE IF EXISTS categories;
+DROP TABLE IF EXISTS users;
+
 CREATE TABLE IF NOT EXISTS categories (
     id INT AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(150) NOT NULL,
@@ -28,23 +33,23 @@ CREATE TABLE IF NOT EXISTS users (
     password VARCHAR(255) NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
-
 INSERT INTO categories (id, name) VALUES
-    (1, 'Tech'),
-    (2, 'SEO')
+    (6, 'Geopolitique')
 ON DUPLICATE KEY UPDATE name = VALUES(name);
 
+-- Insertion des articles sur l'Iran
 INSERT INTO articles (id, category_id, body) VALUES
-    (1, 1, '<h2>Docker PHP setup</h2><p>This article explains how to run php:8.2-apache with mysql using docker compose and URL rewriting.</p>'),
-    (2, 2, '<h2>Rewrite basics</h2><p>This article shows how id and idcat can be captured from friendly URLs and mapped to PHP pages.</p>')
+    (1, 6, '<h1>Tensions croissantes dans le Golfe</h1><p>Les recentes manœuvres militaires dans le detroit d\'Ormuz soulevent des inquietudes internationales quant a la stabilite regionale et aux exportations de petrole.</p>'),
+    (2, 6, '<h1>Analyse des cyber-conflits</h1><p>Au-dela des affrontements physiques, une guerre invisible se joue sur le terrain numerique, ciblant les infrastructures strategiques de part et d\'autre.</p>')
 ON DUPLICATE KEY UPDATE body = VALUES(body);
 
+-- Mise a jour des images associees
 INSERT INTO images (id, article_id, image_url, alt_text, sort_order) VALUES
-    (1, 1, '/template/images/docker-setup.jpg', 'Docker setup visual', 1),
-    (2, 1, '/template/images/apache-rewrite.jpg', 'Apache rewrite rule visual', 2),
-    (3, 2, '/template/images/rewrite-basics.jpg', 'URL rewriting basics', 1)
+    (1, 1, '/assets/image/iran-military-exercise.jpg', 'Manœuvres militaires iraniennes', 1),
+    (2, 1, '/assets/image/strait-of-hormuz-map.jpg', 'Carte strategique du detroit d\'Ormuz', 2),
+    (3, 2, '/assets/image/cyber-warfare-grid.jpg', 'Representation de la cyberguerre', 1)
 ON DUPLICATE KEY UPDATE image_url = VALUES(image_url), alt_text = VALUES(alt_text), sort_order = VALUES(sort_order);
 
 INSERT INTO users (id, username, password) VALUES
-    (1, 'admin', 'admin123')
+    (1, 'admin', 'admin')
 ON DUPLICATE KEY UPDATE username = VALUES(username), password = VALUES(password);
