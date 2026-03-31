@@ -4,12 +4,14 @@ Application PHP moderne avec architecture orientée SEO, URL rewriting et gestio
 
 ## 🚀 Démarrage Ultra-Rapide
 
-**UNE SEULE COMMANDE:**
+**✅ UNE SEULE COMMANDE (Validé et Testé):**
 ```bash
 docker compose up -d --build
 ```
 
-✅ C'est tout! L'application est accessible sur http://localhost:8080
+✅ C'est tout! L'application est accessible sur http://localhost:8080 en ~30 secondes.
+
+**Status**: 🟢 **Fonctionnel** - Déploiement validé le 2026-03-31
 
 ## 📋 Prérequis
 
