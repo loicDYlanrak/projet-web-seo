@@ -12,7 +12,10 @@ CREATE TABLE IF NOT EXISTS categories (
 CREATE TABLE IF NOT EXISTS articles (
     id INT AUTO_INCREMENT PRIMARY KEY,
     category_id INT NOT NULL,
+    title VARCHAR(255) NOT NULL DEFAULT '',
+    author VARCHAR(150) NOT NULL DEFAULT 'Admin',
     body TEXT NOT NULL,
+    views INT DEFAULT 0,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT fk_articles_category FOREIGN KEY (category_id) REFERENCES categories(id)
 );
@@ -38,10 +41,10 @@ INSERT INTO categories (id, name) VALUES
 ON DUPLICATE KEY UPDATE name = VALUES(name);
 
 -- Insertion des articles sur l'Iran
-INSERT INTO articles (id, category_id, body) VALUES
-    (1, 6, '<h1>Tensions croissantes dans le Golfe</h1><p>Les recentes manœuvres militaires dans le detroit d\'Ormuz soulevent des inquietudes internationales quant a la stabilite regionale et aux exportations de petrole.</p>'),
-    (2, 6, '<h1>Analyse des cyber-conflits</h1><p>Au-dela des affrontements physiques, une guerre invisible se joue sur le terrain numerique, ciblant les infrastructures strategiques de part et d\'autre.</p>')
-ON DUPLICATE KEY UPDATE body = VALUES(body);
+INSERT INTO articles (id, category_id, title, author, body) VALUES
+    (1, 6, 'Tensions croissantes dans le Golfe', 'Admin', '<h1>Tensions croissantes dans le Golfe</h1><p>Les recentes manœuvres militaires dans le detroit d\'Ormuz soulevent des inquietudes internationales quant a la stabilite regionale et aux exportations de petrole.</p>'),
+    (2, 6, 'Analyse des cyber-conflits', 'Admin', '<h1>Analyse des cyber-conflits</h1><p>Au-dela des affrontements physiques, une guerre invisible se joue sur le terrain numerique, ciblant les infrastructures strategiques de part et d\'autre.</p>')
+ON DUPLICATE KEY UPDATE title = VALUES(title), author = VALUES(author), body = VALUES(body);
 
 -- Mise a jour des images associees
 INSERT INTO images (id, article_id, image_url, alt_text, sort_order) VALUES
