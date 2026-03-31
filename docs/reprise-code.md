@@ -2,21 +2,38 @@
 
 ## 1) Objectif de ce document
 Ce guide explique rapidement:
-- comment demarrer le projet localement
-- comment est organisee l'architecture
-- ou modifier le code selon le besoin
-- comment diagnostiquer les pannes frequentes
+- comment démarrer le projet localement avec Docker
+- comment est organisée l'architecture
+- où modifier le code selon le besoin
+- comment diagnostiquer les pannes fréquentes
 
-Le but est de permettre une reprise en moins de 30 minutes.
+Le but est de permettre une reprise en moins de 15 minutes avec **une seule commande Docker**.
 
 ## 2) Vue d'ensemble de l'architecture
-Le projet est une application PHP servie par Apache dans Docker, avec MySQL comme base de donnees.
+Le projet est une application PHP servie par Apache dans Docker, avec MySQL comme base de données.
 
-Composants:
-- Service web: conteneur PHP 8.2 Apache
-- Service base de donnees: conteneur MySQL 8.0
-- Rewriting URL: gere par Apache via .htaccess
-- Acces DB: couche PDO factorisee dans config et includes
+**Stack technique:**
+- **PHP**: 8.2 avec Apache
+- **Base de données**: MySQL 8.0
+- **Conteneurisation**: Docker + Docker Compose
+- **URL Rewriting**: Apache mod_rewrite via .htaccess
+- **ORM**: PDO natif (pas de framework externe)
+
+**Architecture applicative:**
+```
+projet-web-seo/
+├── config/            # Configuration DB et connexions
+├── includes/          # Fonctions métier réutilisables
+├── pages/            # Points d'entrée web (frontoffice, backoffice, modules)
+├── assets/           # Ressources statiques (CSS, JS, images)
+├── docker/           # Configuration infrastructure
+│   ├── apache/       # Configuration Apache
+│   └── mysql/init/   # Scripts SQL d'initialisation
+├── docs/             # Documentation technique
+├── .htaccess         # Règles de rewriting URL
+├── docker-compose.yml # Orchestration des services
+└── Dockerfile        # Image web PHP+Apache
+```
 
 ## 3) Structure des dossiers importants
 - Docker et infra
@@ -51,22 +68,47 @@ Chemin d'execution:
 5. includes/function.php utilise dbConnection() de config/database.php puis execute les requetes
 6. Requete SQL sur MySQL puis rendu HTML
 
-## 5) Demarrage local (sans telechargement d'images)
-Prerequis:
-- images locales presentes: php:8.2-apache, mysql:8.0
+## 5) Démarrage rapide (UNE SEULE COMMANDE)
 
-Commandes:
-1. Verifier les images
-   - docker images --format "{{.Repository}}:{{.Tag}}"
-2. Build sans pull
-   - docker compose build --pull=false
-3. Start sans pull
-   - docker compose up -d --pull never
-4. Verifier l'etat
-   - docker compose ps
+### 🚀 Démarrage complet
+```bash
+docker compose up -d --build
+```
 
-Arret:
-- docker compose down
+Cette commande unique:
+1. Build l'image web (PHP 8.2 + Apache + extensions)
+2. Télécharge l'image MySQL 8.0 (si nécessaire)
+3. Crée et démarre les deux conteneurs
+4. Initialise la base de données avec le schéma et les données de seed
+5. Attend que MySQL soit healthy avant de démarrer le web
+
+### ⏸️ Arrêt
+```bash
+docker compose down
+```
+
+### 🗑️ Réinitialisation complète (supprime données)
+Si vous voulez repartir de zéro (drop volumes + rebuild):
+```bash
+docker compose down -v
+docker compose up -d --build
+```
+
+Le flag `-v` supprime les volumes MySQL pour rejouer les scripts d'initialisation.
+
+### 🔍 Vérification de l'état
+```bash
+docker compose ps
+docker compose logs web --tail 50
+docker compose logs db --tail 50
+```
+
+### ⚙️ Mode développement (sans pull)
+Si vous travaillez hors ligne avec les images déjà téléchargées:
+```bash
+docker compose build --pull=never
+docker compose up -d --pull never
+```
 
 ## 6) URLs de verification rapide
 - Application: http://localhost:8080
@@ -99,11 +141,54 @@ Resultat attendu pour db-test:
   - docker/mysql/init/01_schema.sql
   - Attention: ces scripts sont joues a l'initialisation du volume MySQL.
 
-Schema simplifie actuel:
-- categories: id, name
-- articles: id, category_id, body (HTML)
-- images: id, article_id, image_url, alt_text, sort_order
-- users: id, username, password (texte brut, mode prototype)
+**Schéma de base de données actuel:**
+
+```sql
+-- Table categories
+CREATE TABLE categories (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(150) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Table articles
+CREATE TABLE articles (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    category_id INT NOT NULL,
+    title VARCHAR(255) NOT NULL,        -- Ajouté dans 02_update_schema.sql
+    author VARCHAR(150) NOT NULL,       -- Ajouté dans 02_update_schema.sql
+    body TEXT NOT NULL,
+    views INT DEFAULT 0,                -- Ajouté dans 02_update_schema.sql
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (category_id) REFERENCES categories(id)
+);
+
+-- Table images
+CREATE TABLE images (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    article_id INT NOT NULL,
+    image_url VARCHAR(255) NOT NULL,
+    alt_text VARCHAR(255),
+    sort_order INT NOT NULL DEFAULT 1,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (article_id) REFERENCES articles(id) ON DELETE CASCADE
+);
+
+-- Table users
+CREATE TABLE users (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    username VARCHAR(120) NOT NULL UNIQUE,
+    password VARCHAR(255) NOT NULL,     -- ⚠️ Texte brut en prototype
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+```
+
+**Données de seed (catégorie Géopolitique + 2 articles sur l'Iran):**
+- Catégorie: Géopolitique (id=6)
+- Article 1: "Tensions croissantes dans le Golfe"
+- Article 2: "Analyse des cyber-conflits"
+- 3 images associées aux articles
+- User admin: admin/admin
 
 ## 8) Convention de factorisation appliquee
 Factorisation minimale mise en place:
@@ -122,12 +207,18 @@ Note prototype:
 - Les mots de passe utilisateurs sont en texte brut pour aller plus vite.
 - Cette approche ne doit pas etre conservee en production.
 
-## 9) Reinitialiser la base proprement
-Si vous modifiez le schema SQL et voulez recharger depuis zero:
-1. docker compose down -v
-2. docker compose up -d --build --pull never
+## 9) Réinitialiser la base proprement
+Si vous modifiez le schéma SQL et voulez recharger depuis zéro:
+```bash
+docker compose down -v
+docker compose up -d --build
+```
 
-Le flag -v supprime le volume MySQL pour rejouer 01_schema.sql.
+Le flag `-v` supprime le volume MySQL pour rejouer tous les scripts d'initialisation:
+- `01_schema.sql`: Création des tables et données initiales
+- `02_update_schema.sql`: Ajout des colonnes title, author, views
+
+**⚠️ Attention**: Cette commande efface toutes les données de la base!
 
 ## 10) Runbook de diagnostic
 Probleme: DB unhealthy

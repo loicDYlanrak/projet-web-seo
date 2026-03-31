@@ -1,6 +1,0 @@
-
-Créer un docker-compose et un dockerfile si nécessaire utilisant php 8.2-apache et mysql, vérifie les images que j'ai déjà car je veux rien télécharger.
-Active tout de suite tous les trucs nécessaires car je vais utiliser du rewriting.
-Je veux aussi pouvoir modifier les fichiers et voir tout de suite les changements sans redémarrer le serveur ou docker.
-Connecte tout de suite à mysql, crée les fonctions et pages php nécessaires pour cette connection.
-Factorise les fichiers et dossiers
