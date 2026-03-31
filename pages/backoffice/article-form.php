@@ -13,7 +13,6 @@
                     <?php
                     $aujourdhui = date('Y-m-d');
                     ?>
-
                     <input type="date" name="date_debut" value="<?php echo $aujourdhui; ?>">
                 </div>
                 <div class="form-group">
@@ -54,6 +53,30 @@
 
 <script>
     let categories = [];
+    let tinyMCEInitialized = false;
+
+    // Initialiser TinyMCE
+    function initTinyMCE() {
+        if (typeof tinymce !== 'undefined' && !tinyMCEInitialized) {
+            tinymce.init({
+                selector: '#f-body',
+                height: 400,
+                menubar: true,
+                plugins: 'advlist autolink lists link image charmap preview anchor searchreplace visualblocks code fullscreen insertdatetime media table help wordcount',
+                toolbar: 'undo redo | blocks | bold italic backcolor | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | removeformat | help',
+                content_style: 'body { font-family:Helvetica,Arial,sans-serif; font-size:16px }',
+                readonly: false,
+                setup: function(editor) {
+                    editor.on('init', function() {
+                        tinyMCEInitialized = true;
+                        console.log('TinyMCE initialisé');
+                        // Une fois TinyMCE initialisé, charger les données d'édition
+                        loadEditData();
+                    });
+                }
+            });
+        }
+    }
 
     // Charger les catégories
     function loadCategories() {
@@ -66,43 +89,87 @@
                 data.forEach(cat => {
                     select.innerHTML += `<option value="${cat.name}">${cat.name}</option>`;
                 });
+                
+                // Si on est en mode édition, sélectionner la catégorie de l'article
+                if (window.editArticleData && window.editArticleData.category) {
+                    select.value = window.editArticleData.category;
+                    console.log('Catégorie sélectionnée:', window.editArticleData.category);
+                }
             })
-            .catch(error => console.error('Erreur:', error));
+            .catch(error => console.error('Erreur chargement catégories:', error));
     }
 
-    function previewFromUrl(url) {
-        const previewImg = document.getElementById('preview-img');
-        const uploadPlaceholder = document.getElementById('upload-placeholder');
-
-        if (url) {
-            previewImg.src = url;
-            previewImg.classList.remove('hidden');
-            uploadPlaceholder.classList.add('hidden');
-        } else {
-            previewImg.classList.add('hidden');
-            uploadPlaceholder.classList.remove('hidden');
-        }
-    }
-
+    // Annuler le formulaire
     function cancelForm() {
-        document.getElementById('edit-id').value = '';
-        document.getElementById('f-title').value = '';
-        if (tinymce.get('f-body')) {
-            tinymce.get('f-body').setContent('');
-        }
-        document.getElementById('f-author').value = '';
-        document.getElementById('f-category').value = '';
-        document.getElementById('f-image').value = '';
-
-        const imageContainer = document.getElementById('images-container');
-        imageContainer.innerHTML = '';
-
-        document.getElementById('preview-img').classList.add('hidden');
-        document.getElementById('upload-placeholder').classList.remove('hidden');
-        document.getElementById('form-title').textContent = 'Nouvel article';
-        document.getElementById('form-error').classList.add('hidden');
+        window.location.href = 'index.php?view=articles';
     }
 
+    // Charger les données d'édition
+    function loadEditData() {
+        if (!window.editArticleData) {
+            console.log('Aucune donnée d\'édition trouvée');
+            return;
+        }
+        
+        console.log('Chargement des données d\'édition:', window.editArticleData);
+        
+        // Définir l'ID de l'article
+        const editIdField = document.getElementById('edit-id');
+        if (editIdField) {
+            editIdField.value = window.editArticleData.id;
+        }
+        
+        // Modifier le titre du formulaire
+        const formTitle = document.getElementById('form-title');
+        if (formTitle) {
+            formTitle.textContent = 'Modifier l\'article';
+        }
+        
+        // Charger le contenu dans TinyMCE
+        if (tinymce.get('f-body')) {
+            tinymce.get('f-body').setContent(window.editArticleData.body);
+            console.log('Contenu chargé dans TinyMCE');
+        } else {
+            console.log('TinyMCE non disponible, attente...');
+            setTimeout(loadEditData, 200);
+            return;
+        }
+        
+        // Charger les images existantes
+        if (window.editArticleData.images && window.editArticleData.images.length > 0) {
+            const imageContainer = document.getElementById('images-container');
+            if (imageContainer) {
+                imageContainer.innerHTML = '';
+                
+                window.editArticleData.images.forEach((imageUrl, index) => {
+                    const imageItem = document.createElement('div');
+                    imageItem.className = 'image-item';
+                    imageItem.setAttribute('data-filename', 'Image ' + (index + 1));
+                    
+                    imageItem.innerHTML = `
+                        <img src="${escapeHtml(imageUrl)}" alt="Image ${index + 1}">
+                        <button type="button" onclick="removeImage(this)" title="Supprimer">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="18" y1="6" x2="6" y2="18"></line>
+                                <line x1="6" y1="6" x2="18" y2="18"></line>
+                            </svg>
+                        </button>
+                        <input type="hidden" name="images[]" value="${escapeHtml(imageUrl)}">
+                    `;
+                    
+                    imageContainer.appendChild(imageItem);
+                });
+            }
+            
+            // Masquer l'upload placeholder
+            const uploadPlaceholder = document.getElementById('upload-placeholder');
+            if (uploadPlaceholder) {
+                uploadPlaceholder.classList.add('hidden');
+            }
+        }
+    }
+
+    // Sauvegarder l'article
     function saveArticle() {
         const id = document.getElementById('edit-id').value;
 
@@ -117,9 +184,7 @@
         }
 
         const body = tempDiv.innerHTML.trim();
-
         const author = 'Administrateur'; 
-
         const category = document.getElementById('f-category').value;
 
         const images = [];
@@ -172,6 +237,7 @@
             });
     }
 
+    // Gérer l'upload d'images
     function handleImageUpload(event) {
         const files = event.target.files;
         const imageContainer = document.getElementById('images-container');
@@ -179,13 +245,11 @@
         for (let i = 0; i < files.length; i++) {
             const file = files[i];
 
-            // Vérifier le type de fichier
             if (!file.type.startsWith('image/')) {
                 showError(`Le fichier "${file.name}" n'est pas une image`);
                 continue;
             }
 
-            // Vérifier la taille (max 5MB)
             if (file.size > 5 * 1024 * 1024) {
                 showError(`L'image "${file.name}" dépasse 5MB`);
                 continue;
@@ -198,19 +262,18 @@
                 imageItem.className = 'image-item';
                 imageItem.setAttribute('data-filename', file.name.length > 15 ? file.name.substring(0, 12) + '...' : file.name);
 
-                // Stocker les données de l'image
                 const imageData = e.target.result;
 
                 imageItem.innerHTML = `
-                <img src="${imageData}" alt="${escapeHtml(file.name)}">
-                <button type="button" onclick="removeImage(this, '${imageData}')" title="Supprimer">
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <line x1="18" y1="6" x2="6" y2="18"></line>
-                        <line x1="6" y1="6" x2="18" y2="18"></line>
-                    </svg>
-                </button>
-                <input type="hidden" name="images[]" value="${imageData}">
-            `;
+                    <img src="${imageData}" alt="${escapeHtml(file.name)}">
+                    <button type="button" onclick="removeImage(this)" title="Supprimer">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                        </svg>
+                    </button>
+                    <input type="hidden" name="images[]" value="${imageData}">
+                `;
 
                 imageContainer.appendChild(imageItem);
             };
@@ -218,32 +281,72 @@
             reader.readAsDataURL(file);
         }
 
-        // Réinitialiser l'input file pour permettre de re-uploader les mêmes fichiers
         event.target.value = '';
+        
+        // Masquer le placeholder
+        const uploadPlaceholder = document.getElementById('upload-placeholder');
+        if (uploadPlaceholder) {
+            uploadPlaceholder.classList.add('hidden');
+        }
     }
 
-    function removeImage(button, imageData) {
+    // Supprimer une image
+    function removeImage(button) {
         const imageItem = button.closest('.image-item');
         if (imageItem) {
             imageItem.remove();
         }
+        
+        const imageContainer = document.getElementById('images-container');
+        if (imageContainer && imageContainer.children.length === 0) {
+            const uploadPlaceholder = document.getElementById('upload-placeholder');
+            if (uploadPlaceholder) {
+                uploadPlaceholder.classList.remove('hidden');
+            }
+        }
     }
 
-    // Fonction utilitaire pour échapper le HTML
+    // Utilitaires
     function escapeHtml(text) {
+        if (!text) return '';
         const div = document.createElement('div');
         div.textContent = text;
         return div.innerHTML;
     }
+    
     function showError(message) {
         const errorDiv = document.getElementById('form-error');
-        errorDiv.textContent = message;
-        errorDiv.classList.remove('hidden');
-        setTimeout(() => {
-            errorDiv.classList.add('hidden');
-        }, 5000);
+        if (errorDiv) {
+            errorDiv.textContent = message;
+            errorDiv.classList.remove('hidden');
+            setTimeout(() => {
+                errorDiv.classList.add('hidden');
+            }, 5000);
+        }
+    }
+    
+    function showSuccess(message) {
+        const errorDiv = document.getElementById('form-error');
+        if (errorDiv) {
+            errorDiv.textContent = message;
+            errorDiv.style.background = 'rgba(78,204,138,0.1)';
+            errorDiv.style.borderColor = 'rgba(78,204,138,0.25)';
+            errorDiv.style.color = 'var(--success)';
+            errorDiv.classList.remove('hidden');
+            
+            setTimeout(() => {
+                errorDiv.classList.add('hidden');
+                errorDiv.style.background = '';
+                errorDiv.style.borderColor = '';
+                errorDiv.style.color = '';
+            }, 3000);
+        }
     }
 
-    // Charger les catégories au démarrage
-    loadCategories();
+    // Initialisation au chargement de la page
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log('DOM chargé, initialisation...');
+        loadCategories();
+        initTinyMCE();
+    });
 </script>
