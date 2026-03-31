@@ -73,6 +73,7 @@ function findAllArticles(PDO $pdo, ?string $category = null): array
                 a.id, 
                 a.title, 
                 a.author, 
+                a.body,
                 a.created_at, 
                 c.name as category_name,
                 (
@@ -94,6 +95,7 @@ function findAllArticles(PDO $pdo, ?string $category = null): array
                 a.id, 
                 a.title, 
                 a.author, 
+                a.body,
                 a.created_at, 
                 c.name as category_name,
                 (
@@ -386,5 +388,152 @@ function deleteImageFile(string $imageUrl): bool
     }
     
     return false;
+}
+
+function findAllArticless(PDO $pdo, ?string $category = null, ?int $limit = null, ?int $offset = null): array
+{
+    $sql = '
+        SELECT 
+            a.id, 
+            a.title, 
+            a.author, 
+            a.body,
+            a.created_at, 
+            c.name as category_name,
+            LOWER(REPLACE(REPLACE(REPLACE(a.title, " ", "-"), "?", ""), "!", "")) as slug,
+            (
+                SELECT i.image_url 
+                FROM images i 
+                WHERE i.article_id = a.id 
+                ORDER BY i.sort_order ASC, i.id ASC 
+                LIMIT 1
+            ) as image
+        FROM articles a 
+        INNER JOIN categories c ON c.id = a.category_id 
+    ';
+    
+    $params = [];
+    
+    if ($category && $category !== 'all') {
+        $sql .= ' WHERE LOWER(c.name) = LOWER(:category)';
+        $params['category'] = $category;
+    }
+    
+    $sql .= ' ORDER BY a.created_at DESC';
+    
+    if ($limit !== null) {
+        $sql .= ' LIMIT ' . (int)$limit;
+        if ($offset !== null) {
+            $sql .= ' OFFSET ' . (int)$offset;
+        }
+    }
+    
+    $stmt = $pdo->prepare($sql);
+    $stmt->execute($params);
+    
+    return $stmt->fetchAll();
+}
+
+/**
+ * Récupérer les derniers articles
+ */
+function findLatestArticles(PDO $pdo, int $limit = 5): array
+{
+    return findAllArticles($pdo, null, $limit);
+}
+
+/**
+ * Récupérer un article par son slug
+ */
+function findArticleBySlug(PDO $pdo, string $slug): ?array
+{
+    // Convertir le slug en titre approximatif pour la recherche
+    $searchTitle = str_replace('-', ' ', $slug);
+    
+    $stmt = $pdo->prepare('
+        SELECT a.id, a.category_id, a.body, a.title, a.author, a.created_at, c.name AS category_name 
+        FROM articles a 
+        INNER JOIN categories c ON c.id = a.category_id 
+        WHERE LOWER(REPLACE(REPLACE(REPLACE(a.title, " ", "-"), "?", ""), "!", "")) = LOWER(:slug)
+        LIMIT 1
+    ');
+    $stmt->execute(['slug' => $slug]);
+    $article = $stmt->fetch();
+    
+    if ($article === false) {
+        // Fallback: chercher par ID si le slug est un nombre
+        if (ctype_digit($slug)) {
+            return findArticleById($pdo, (int)$slug);
+        }
+        return null;
+    }
+    
+    return $article;
+}
+
+/**
+ * Récupérer les articles connexes
+ */
+function findRelatedArticles(PDO $pdo, int $articleId, int $categoryId, int $limit = 3): array
+{
+    $stmt = $pdo->prepare('
+        SELECT 
+            a.id, 
+            a.title, 
+            a.author, 
+            a.created_at, 
+            c.name as category_name,
+            LOWER(REPLACE(REPLACE(REPLACE(a.title, " ", "-"), "?", ""), "!", "")) as slug,
+            (
+                SELECT i.image_url 
+                FROM images i 
+                WHERE i.article_id = a.id 
+                ORDER BY i.sort_order ASC, i.id ASC 
+                LIMIT 1
+            ) as image
+        FROM articles a 
+        INNER JOIN categories c ON c.id = a.category_id 
+        WHERE a.category_id = :category_id AND a.id != :article_id
+        ORDER BY a.created_at DESC
+        LIMIT :limit
+    ');
+    $stmt->bindValue('category_id', $categoryId, PDO::PARAM_INT);
+    $stmt->bindValue('article_id', $articleId, PDO::PARAM_INT);
+    $stmt->bindValue('limit', $limit, PDO::PARAM_INT);
+    $stmt->execute();
+    
+    return $stmt->fetchAll();
+}
+
+/**
+ * Récupérer les auteurs populaires
+ */
+function getTrendingAuthors(PDO $pdo, int $limit = 5): array
+{
+    $stmt = $pdo->query('
+        SELECT 
+            a.author as name,
+            MIN(u.id) as id,
+            COUNT(*) as articles_count,
+            (COUNT(*) * 100) as followers
+        FROM articles a
+        LEFT JOIN users u ON u.username = a.author
+        GROUP BY a.author
+        ORDER BY articles_count DESC
+        LIMIT ' . (int)$limit
+    );
+    
+    $results = $stmt->fetchAll();
+    
+    // S'assurer que chaque auteur a un ID unique pour l'avatar
+    foreach ($results as $i => &$author) {
+        if (empty($author['id'])) {
+            $author['id'] = $i + 100;
+        }
+        // Simuler des followers (basé sur le nombre d'articles)
+        $author['followers'] = $author['articles_count'] * 1000 + rand(100, 9000);
+    }
+    
+    return $results;
 }
 

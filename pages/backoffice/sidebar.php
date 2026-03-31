@@ -14,10 +14,7 @@ $currentView = getCurrentView();
             <svg viewBox="0 0 24 24"><path d="M4 6h16M4 10h16M4 14h10M4 18h8"/></svg>
             Articles
         </a>
-        <a href="<?php echo url('new-article'); ?>" class="nav-item <?php echo $currentView === 'new-article' ? 'active' : ''; ?>" data-view="new-article">
-            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
-            Nouvel article
-        </a>
+      
     </nav>
     <div class="sidebar-footer">
         <div class="sidebar-user">

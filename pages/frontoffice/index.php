@@ -1,364 +1,96 @@
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>VertoNews - Top News</title>
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" />
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
-  <link rel="stylesheet" href="css/style.css" />
-</head>
-<body>
+<?php
+// index.php - Point d'entrée unique du frontoffice
+require_once __DIR__ . '/../../config/database.php';
+require_once __DIR__ . '/../../includes/function.php';
 
-<!-- ============================================================
-     DESKTOP LAYOUT
-     ============================================================ -->
-<div class="desktop-only">
+// Initialisation de la connexion à la base de données (une seule fois)
+$pdo = dbConnection();
 
-  <!-- NAV -->
-  <nav class="desktop-nav">
-    <div class="nav-top">
-      <div class="nav-left">
-        <button class="nav-icon-btn"><i class="fas fa-search"></i></button>
-        <span style="width:1px;height:22px;background:var(--border);display:inline-block;margin:0 2px;"></span>
-        <button class="nav-icon-btn"><i class="fas fa-bars"></i></button>
-      </div>
-      <div class="brand">VERTO<span>NEWS</span></div>
-      <div class="nav-right">
-        <a href="../backoffice/login" class="btn btn-sm btn-outline-dark me-2" style="border-radius: 20px; font-weight: 600; font-size: 12px;">
-          <i class="fas fa-lock me-1"></i> ADMIN
-        </a>
+// Déterminer la page à afficher
+$page = $_GET['page'] ?? 'home';
+
+$slug = $_GET['slug'] ?? null;
+$category = $_GET['category'] ?? null;
+
+// Récupérer les données nécessaires selon la page
+$articles = [];
+$article = null;
+$categories = [];
+$currentCategory = null;
+
+// Récupérer toutes les catégories pour le menu
+$categories = findAllCategories($pdo);
+
+switch ($page) {
+    case 'home':
+        // Récupérer les articles pour la page d'accueil
+        $featuredArticles = findAllArticles($pdo, null, 5);
+        $latestArticles = findAllArticles($pdo, null, 6, 5);
+        $breakingNews = findLatestArticles($pdo, 3);
+        break;
         
-        <span style="width:1px;height:22px;background:var(--border);display:inline-block;margin:0 2px;"></span>
-        <a href="#" class="ms-2"><i class="far fa-user-circle" style="font-size:21px;"></i></a>
-      </div>
-    </div>
-    <div class="nav-categories">
-      <a href="index.html">Home</a>
-      <a href="pages/discover.html">New</a>
-      <a href="#" class="active">Top News</a>
-      <a href="#">Politics</a>
-      <a href="#">Sports</a>
-      <a href="#">Economy</a>
-      <a href="#">Culture</a>
-      <a href="#">Technology</a>
-      <a href="#">Science</a>
-      <a href="#">Health</a>
-    </div>
-  </nav>
+    case 'discover':
+        // Récupérer tous les articles pour la page discover
+        $articles = findAllArticles($pdo, $category);
+        $currentCategory = $category;
+        break;
+        
+    case 'article':
+        // Récupérer un article spécifique par son slug ou ID
+        if ($slug) {
+            $article = findArticleBySlug($pdo, $slug);
+        } elseif (isset($_GET['id'])) {
+            $article = findArticleById($pdo, (int)$_GET['id']);
+        }
+        
+        if (!$article) {
+            $page = '404';
+        } else {
+            // Récupérer les images de l'article
+            $article['images'] = findImagesByArticleId($pdo, $article['id']);
+            // Récupérer les articles connexes
+            $relatedArticles = findRelatedArticles($pdo, $article['id'], $article['category_id']);
+        }
+        break;
+        
+    case 'category':
+        // Récupérer les articles par catégorie
+        if ($category) {
+            $categoryInfo = findCategoryByIdentifier($pdo, $category);
+            if ($categoryInfo) {
+                $articles = findAllArticles($pdo, $categoryInfo['name']);
+                $currentCategory = $categoryInfo;
+            } else {
+                $page = '404';
+            }
+        } else {
+            $page = '404';
+        }
+        break;
+        
+    default:
+        $page = '404';
+        break;
+}
 
-  <!-- HERO GRID -->
-  <div class="hero-grid">
+// Inclure l'en-tête avec le DOCTYPE
+include __DIR__ . '/pages/header.php';
+?>
 
-    <!-- MAIN FEATURED -->
-    <div class="hero-main hover-card" onclick="navigate('pages/article.html')">
-      <img class="hero-img w-100" src="https://images.unsplash.com/photo-1612872087720-bb876e2e67d1?w=800&q=80" alt="Boxing" style="height:360px;border-radius:14px;" />
-      <div class="hero-body">
-        <div class="hero-meta">
-          <div class="author-row">
-            <img src="https://i.pravatar.cc/40?img=11" alt="Adam Strong" />
-            <span class="fw-700">Adam Strong</span>
-            <span class="sep">·</span>
-            <span class="tag-light tag">Sport</span>
-            <span class="sep">·</span>
-            <span>10:00 AM, Today</span>
-          </div>
-        </div>
-        <h1>Will he retire? One more loss and Fury is finished!</h1>
-        <p>The Usyk vs. Fury fight is on the horizon, but will it be the last for the "Gypsy King"? Tyson Fury, who recently narrowly escaped defeat in his last fights, is now facing the toughest challenge of his career — a confrontation with the undefeated Oleksandr Usyk.</p>
-        <a href="pages/article.html" class="read-more">read more</a>
-      </div>
-    </div>
+<!-- Contenu principal selon la page -->
+<?php if ($page === 'home'): ?>
+    <?php include __DIR__ . '/pages/home-content.php'; ?>
+<?php elseif ($page === 'discover'): ?>
+    <?php include __DIR__ . '/pages/discover-content.php'; ?>
+<?php elseif ($page === 'article' && $article): ?>
+    <?php include __DIR__ . '/pages/article-content.php'; ?>
+<?php elseif ($page === 'category'): ?>
+    <?php include __DIR__ . '/pages/category-content.php'; ?>
+<?php else: ?>
+    <?php include __DIR__ . '/pages/404-content.php'; ?>
+<?php endif; ?>
 
-    <!-- SIDEBAR -->
-    <aside class="sidebar-section">
-      <h3>Latest Stories</h3>
-
-      <div class="news-card-sm hover-card" onclick="navigate('pages/article.html')">
-        <img class="thumb" src="https://images.unsplash.com/photo-1446776653964-20c1d3a81b06?w=200&q=80" alt="Exoplanet" />
-        <div class="info">
-          <div class="cat">Science</div>
-          <h4>Astronomers discover new exoplanet in habitable zone</h4>
-          <div class="meta">
-            <img src="https://i.pravatar.cc/30?img=5" alt="" />
-            <span>Mary Frost</span><span>·</span><span class="tag-light tag">Science</span><span>·</span><span>10:00 AM, Today</span>
-          </div>
-        </div>
-      </div>
-
-      <div class="news-card-sm hover-card" onclick="navigate('pages/article.html')">
-        <img class="thumb" src="https://images.unsplash.com/photo-1509391366360-2e959784a276?w=200&q=80" alt="Energy" />
-        <div class="info">
-          <div class="cat">Economy</div>
-          <h4>Scientists have developed a new method of storing renewable energy</h4>
-          <div class="meta">
-            <img src="https://i.pravatar.cc/30?img=8" alt="" />
-            <span>Lucas Ray</span><span>·</span><span class="tag-light tag" style="color:var(--tag-economy);background:#fff3e8;">Economy</span><span>·</span><span>1:00 PM, Today</span>
-          </div>
-        </div>
-      </div>
-
-      <div class="news-card-sm hover-card" onclick="navigate('pages/article.html')">
-        <img class="thumb" src="https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=200&q=80" alt="Vaccine" />
-        <div class="info">
-          <div class="cat">Health</div>
-          <h4>New vaccine against a rare disease has been successfully tested</h4>
-          <div class="meta">
-            <img src="https://i.pravatar.cc/30?img=11" alt="" />
-            <span>Adam Strong</span><span>·</span><span class="tag-light tag" style="color:var(--tag-health);background:#f3e8ff;">Health</span><span>·</span><span>6:00 PM, Today</span>
-          </div>
-        </div>
-      </div>
-
-      <!-- TRENDING AUTHORS -->
-      <div class="trending-authors">
-        <h3>Trending authors</h3>
-        <div class="authors-grid">
-          <div class="author-card">
-            <div class="a-info">
-              <img src="https://i.pravatar.cc/50?img=11" alt="Adam Strong" />
-              <div>
-                <div class="a-name">Adam Strong</div>
-                <div class="a-followers">14.3K followers</div>
-              </div>
-            </div>
-            <button class="a-follow"><i class="fas fa-arrow-up-right-from-square" style="font-size:11px;"></i></button>
-          </div>
-          <div class="author-card">
-            <div class="a-info">
-              <img src="https://i.pravatar.cc/50?img=9" alt="Samantha Hayes" />
-              <div>
-                <div class="a-name">Samantha Hayes</div>
-                <div class="a-followers">18.7K followers</div>
-              </div>
-            </div>
-            <button class="a-follow"><i class="fas fa-arrow-up-right-from-square" style="font-size:11px;"></i></button>
-          </div>
-        </div>
-      </div>
-    </aside>
-  </div>
-
-  <!-- MORE ARTICLES ROW -->
-  <div style="padding: 0 40px 40px;">
-    <div class="section-header">
-      <h2>More Top Stories</h2>
-      <a href="pages/discover.html" class="view-all">View all</a>
-    </div>
-    <div class="row g-3">
-      <div class="col-md-4">
-        <div class="hover-card" onclick="navigate('pages/article.html')" style="border-radius:14px;overflow:hidden;border:1px solid var(--border);">
-          <img src="https://images.unsplash.com/photo-1580894894513-541e068a3e2b?w=500&q=80" alt="" style="height:180px;object-fit:cover;" />
-          <div style="padding:16px;">
-            <span class="tag tag-education mb-2 d-inline-block">Education</span>
-            <h3 style="font-size:15px;margin:8px 0 10px;">Secondary school places: When do parents find out?</h3>
-            <div class="author-row"><img src="https://i.pravatar.cc/30?img=7" alt="" /><span>Rosemary</span><span class="sep">·</span><span>Feb 28, 2023</span></div>
-          </div>
-        </div>
-      </div>
-      <div class="col-md-4">
-        <div class="hover-card" onclick="navigate('pages/article.html')" style="border-radius:14px;overflow:hidden;border:1px solid var(--border);">
-          <img src="https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=500&q=80" alt="" style="height:180px;object-fit:cover;" />
-          <div style="padding:16px;">
-            <span class="tag tag-sport mb-2 d-inline-block">Sports</span>
-            <h3 style="font-size:15px;margin:8px 0 10px;">What Training Do Volleyball Players Need?</h3>
-            <div class="author-row"><img src="https://i.pravatar.cc/30?img=3" alt="" /><span>McKindney</span><span class="sep">·</span><span>Feb 27, 2023</span></div>
-          </div>
-        </div>
-      </div>
-      <div class="col-md-4">
-        <div class="hover-card" onclick="navigate('pages/article.html')" style="border-radius:14px;overflow:hidden;border:1px solid var(--border);">
-          <img src="https://images.unsplash.com/photo-1504711434969-e33886168f5c?w=500&q=80" alt="" style="height:180px;object-fit:cover;" />
-          <div style="padding:16px;">
-            <span class="tag tag-world mb-2 d-inline-block">World</span>
-            <h3 style="font-size:15px;margin:8px 0 10px;">6 Houses Destroyed In Massive Fire In Assam's K.</h3>
-            <div class="author-row"><img src="https://i.pravatar.cc/30?img=14" alt="" /><span>Aslam K.</span><span class="sep">·</span><span>Feb 27, 2023</span></div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- FOOTER -->
-  <footer class="site-footer">
-    <div class="footer-grid">
-      <div>
-        <div class="brand">VERTO<span>NEWS</span></div>
-        <p>Your trusted source for breaking news, in-depth analysis, and stories that matter — from around the world.</p>
-      </div>
-      <div>
-        <h5>Categories</h5>
-        <ul>
-          <li><a href="#">Politics</a></li>
-          <li><a href="#">Sports</a></li>
-          <li><a href="#">Economy</a></li>
-          <li><a href="#">Health</a></li>
-          <li><a href="#">Science</a></li>
-        </ul>
-      </div>
-      <div>
-        <h5>Company</h5>
-        <ul>
-          <li><a href="#">About Us</a></li>
-          <li><a href="#">Careers</a></li>
-          <li><a href="#">Advertise</a></li>
-          <li><a href="#">Press</a></li>
-        </ul>
-      </div>
-      <div>
-        <h5>Legal</h5>
-        <ul>
-          <li><a href="#">Privacy Policy</a></li>
-          <li><a href="#">Terms of Use</a></li>
-          <li><a href="#">Cookie Policy</a></li>
-        </ul>
-      </div>
-    </div>
-    <div class="footer-bottom">
-      <span>© 2024 VertoNews. All rights reserved.</span>
-      <span>Made with ❤️ for curious minds</span>
-    </div>
-  </footer>
-</div>
-
-<!-- ============================================================
-     MOBILE LAYOUT
-     ============================================================ -->
-<div class="mobile-only">
-
-  <!-- MOBILE HEADER -->
-  <header class="mobile-header">
-    <button class="hamburger"><i class="fas fa-bars"></i></button>
-    <div class="mob-icons">
-      <button><i class="fas fa-search"></i></button>
-      <button style="position:relative;">
-        <i class="fas fa-bell"></i>
-        <span class="notif-dot"></span>
-      </button>
-    </div>
-  </header>
-
-  <!-- BREAKING NEWS -->
-  <div style="padding: 18px 20px 8px;">
-    <div class="section-header">
-      <h2>Breaking News</h2>
-      <span class="view-all" onclick="navigate('pages/discover.html')">View all</span>
-    </div>
-  </div>
-
-  <div class="breaking-carousel">
-    <!-- Card 1 -->
-    <div class="breaking-card hover-card" onclick="navigate('pages/article-mobile.html')">
-      <img src="https://images.unsplash.com/photo-1517649763962-0c623066013b?w=600&q=80" alt="Cycling" />
-      <div class="overlay"></div>
-      <div class="card-body">
-        <span class="tag tag-sport">Sports</span>
-        <div class="mob-meta">
-          <img src="https://i.pravatar.cc/30?img=15" alt="" />
-          <span>CNN Indonesia</span>
-          <span class="verified">✓</span>
-          <span>· 6 hours ago</span>
-        </div>
-        <h3>Alexander wears modified helmet in road races</h3>
-      </div>
-    </div>
-    <!-- Card 2 -->
-    <div class="breaking-card hover-card" onclick="navigate('pages/article-mobile.html')">
-      <img src="https://images.unsplash.com/photo-1612872087720-bb876e2e67d1?w=600&q=80" alt="Boxing" />
-      <div class="overlay"></div>
-      <div class="card-body">
-        <span class="tag tag-sport">Sports</span>
-        <div class="mob-meta">
-          <img src="https://i.pravatar.cc/30?img=11" alt="" />
-          <span>ESPN</span>
-          <span>· 2 hours ago</span>
-        </div>
-        <h3>Will he retire? One more loss and Fury is finished!</h3>
-      </div>
-    </div>
-    <!-- Card 3 -->
-    <div class="breaking-card hover-card" onclick="navigate('pages/article-mobile.html')">
-      <img src="https://images.unsplash.com/photo-1446776653964-20c1d3a81b06?w=600&q=80" alt="Science" />
-      <div class="overlay"></div>
-      <div class="card-body">
-        <span class="tag" style="background:var(--tag-science)">Science</span>
-        <div class="mob-meta">
-          <img src="https://i.pravatar.cc/30?img=5" alt="" />
-          <span>NASA</span>
-          <span>· 4 hours ago</span>
-        </div>
-        <h3>Astronomers discover new exoplanet in habitable zone</h3>
-      </div>
-    </div>
-  </div>
-  <div class="carousel-dots">
-    <div class="dot active"></div>
-    <div class="dot"></div>
-    <div class="dot"></div>
-  </div>
-
-  <!-- RECOMMENDATIONS -->
-  <div style="padding: 4px 20px 10px;">
-    <div class="section-header">
-      <h2>Recommendation</h2>
-      <span class="view-all" onclick="navigate('pages/discover.html')">View all</span>
-    </div>
-  </div>
-
-  <div class="mob-rec-card" onclick="navigate('pages/article-mobile.html')">
-    <img class="thumb" src="https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=300&q=80" alt="Volleyball" />
-    <div class="info">
-      <div class="cat">Sports</div>
-      <h4>What Training Do Volleyball Players Need?</h4>
-      <div class="meta">
-        <img src="https://i.pravatar.cc/30?img=3" alt="" />
-        <span>McKindney</span><span>·</span><span>Feb 27, 2023</span>
-      </div>
-    </div>
-  </div>
-  <div class="mob-rec-card" onclick="navigate('pages/article-mobile.html')">
-    <img class="thumb" src="https://images.unsplash.com/photo-1580894894513-541e068a3e2b?w=300&q=80" alt="Education" />
-    <div class="info">
-      <div class="cat">Education</div>
-      <h4>Secondary school places: When do parents find out?</h4>
-      <div class="meta">
-        <img src="https://i.pravatar.cc/30?img=7" alt="" />
-        <span>Rosemary</span><span>·</span><span>Feb 28, 2023</span>
-      </div>
-    </div>
-  </div>
-  <div class="mob-rec-card" onclick="navigate('pages/article-mobile.html')">
-    <img class="thumb" src="https://images.unsplash.com/photo-1504711434969-e33886168f5c?w=300&q=80" alt="Fire" />
-    <div class="info">
-      <div class="cat">World</div>
-      <h4>6 Houses Destroyed In Massive Fire In Assam's K.</h4>
-      <div class="meta">
-        <img src="https://i.pravatar.cc/30?img=14" alt="" />
-        <span>Aslam K.</span><span>·</span><span>Feb 27, 2023</span>
-      </div>
-    </div>
-  </div>
-
-</div><!-- /mobile-only -->
-
-<!-- MOBILE BOTTOM NAV -->
-<nav class="mobile-bottom-nav">
-  <button class="mob-nav-item active-home">
-    <i class="fas fa-home"></i>
-    <span>Home</span>
-  </button>
-  <button class="mob-nav-item" onclick="navigate('pages/discover.html')">
-    <i class="fas fa-globe"></i>
-  </button>
-  <button class="mob-nav-item">
-    <i class="far fa-bookmark"></i>
-  </button>
-  <button class="mob-nav-item">
-    <i class="far fa-user"></i>
-  </button>
-</nav>
-
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-<script src="js/main.js"></script>
-</body>
-</html>
+<?php
+// Inclure le pied de page
+include __DIR__ . '/pages/footer.php';
+?>

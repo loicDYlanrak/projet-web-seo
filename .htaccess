@@ -7,6 +7,7 @@ RewriteRule ^pages/article-([_a-z0-9-]+)\.html$ pages/modules.php?id=$1 [L,QSA,N
 RewriteRule ^(.*/)?[^/]*-([_a-z0-9-]+)-([_a-z0-9-]+)\.html$ pages/modules.php?id=$2&idcat=$3 [L,QSA,NC]
 RewriteRule ^(.*/)?[^/]*-([_a-z0-9-]+)-([_a-z0-9-]+)\.php$ pages/modules.php?id=$2&idcat=$3 [L,QSA,NC]
 
+
 RewriteEngine On
 
 <IfModule mod_headers.c>
